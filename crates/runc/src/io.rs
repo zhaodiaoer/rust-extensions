@@ -30,6 +30,7 @@ use std::{
 use log::debug;
 use nix::unistd::{Gid, Uid};
 #[cfg(feature = "async")]
+use std::io::{LineWriter, Write};
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::unix::pipe;
 
@@ -346,7 +347,7 @@ impl Io for FIFO {
 
         if let Some(path) = self.stdout.as_ref() {
             let stdout = OpenOptions::new().write(true).open(path)?; // liulei.pt : ******
-            cmd.stdout(stdout);
+            cmd.stdout(LineWriterWrap::new(stdout));
         }
 
         if let Some(path) = self.stderr.as_ref() {
@@ -358,6 +359,25 @@ impl Io for FIFO {
     }
 
     fn close_after_start(&self) {}
+}
+
+pub struct LineWriterWrap<W: ?Sized + Write> {
+    pub inner: LineWriter<W>,
+}
+
+impl<W: Write> LineWriterWrap<W> {
+    fn new(inner: W) -> LineWriterWrap<W> {
+        LineWriterWrap {
+            inner: LineWriter::new(inner),
+        }
+    }
+}
+
+impl Into<Stdio> for LineWriterWrap<std::fs::File> {
+    fn into(self) -> Stdio {
+        let inner = self.inner.into_inner().unwrap();
+        Stdio::from(inner)
+    }
 }
 
 #[cfg(test)]
