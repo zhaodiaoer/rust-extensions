@@ -345,7 +345,7 @@ impl Io for FIFO {
         }
 
         if let Some(path) = self.stdout.as_ref() {
-            let stdout = OpenOptions::new().write(true).open(path)?;
+            let stdout = OpenOptions::new().write(true).open(path)?; // liulei.pt : ******
             cmd.stdout(stdout);
         }
 

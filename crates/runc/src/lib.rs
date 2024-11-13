@@ -427,7 +427,7 @@ impl Runc {
         let mut cmd = self.command(&args)?;
         match opts {
             Some(CreateOpts { io: Some(io), .. }) => {
-                io.set(&mut cmd).map_err(Error::UnavailableIO)?;
+                io.set(&mut cmd).map_err(Error::UnavailableIO)?; // liulei.pt: 给fifo打开的句柄接到runc进程的stdout
                 let res = self.launch(cmd, true).await?;
                 io.close_after_start();
                 Ok(res)

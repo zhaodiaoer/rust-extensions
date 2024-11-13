@@ -115,7 +115,7 @@ impl ContainerFactory<RuncContainer> for RuncFactory {
         )?;
 
         let id = req.id();
-        let stdio = Stdio::new(req.stdin(), req.stdout(), req.stderr(), req.terminal());
+        let stdio = Stdio::new(req.stdin(), req.stdout(), req.stderr(), req.terminal()); // liulei.pt: 使用req传过来的fifo路径创建stdio
 
         let mut init = InitProcess::new(
             id,
@@ -162,7 +162,7 @@ impl RuncFactory {
             create_opts.console_socket = Some(s.path.to_owned());
             (Some(s), None)
         } else {
-            let pio = create_io(&id, opts.io_uid, opts.io_gid, stdio)?;
+            let pio = create_io(&id, opts.io_uid, opts.io_gid, stdio)?; // liulei.pt: 基于stdio创建ProcessIO
             create_opts.io = pio.io.as_ref().cloned();
             (None, Some(pio))
         };
@@ -170,7 +170,7 @@ impl RuncFactory {
         let resp = init
             .lifecycle
             .runtime
-            .create(&id, bundle, Some(&create_opts))
+            .create(&id, bundle, Some(&create_opts)) // liulei.pt: 携带fifo句柄创建runc进程
             .await;
         if let Err(e) = resp {
             if let Some(s) = socket {
@@ -178,7 +178,7 @@ impl RuncFactory {
             }
             return Err(runtime_error(bundle, e, "OCI runtime create failed").await);
         }
-        copy_io_or_console(init, socket, pio, init.lifecycle.exit_signal.clone()).await?;
+        copy_io_or_console(init, socket, pio, init.lifecycle.exit_signal.clone()).await?; // liulei.pt: fifo句柄已经接到runc进程了,所以pio.copy是false也可以
         let pid = read_file_to_str(pid_path).await?.parse::<i32>()?;
         init.pid = pid;
         Ok(())
@@ -665,7 +665,7 @@ where
             _ = exit_signal.wait() => {
                 debug!("container exit, copy task should exit too");
             },
-            res = tokio::io::copy(&mut src, &mut dst) => {
+            res = tokio::io::copy(&mut src, &mut dst) => { // liulei.pt
                if let Err(e) = res {
                     error!("copy io failed {}", e);
                 }

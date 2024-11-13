@@ -107,12 +107,13 @@ pub fn create_io(
             stdio.stderr.as_str()
         );
         let io = FIFO {
+            // liulei.pt: 这个过程没有创建新的pipe,只是构造了一个对象,成员是string
             stdin: stdio.stdin.to_string().none_if(|x| x.is_empty()),
             stdout: stdio.stdout.to_string().none_if(|x| x.is_empty()),
             stderr: stdio.stderr.to_string().none_if(|x| x.is_empty()),
         };
         pio.io = Some(Arc::new(io));
-        pio.copy = false;
+        pio.copy = false; // liulei.pt: 由于直接把fifo给容器作为stdout了,所以不需要copy了
     }
     Ok(pio)
 }
